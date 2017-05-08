@@ -1,4 +1,4 @@
-# DockerBalancerSD
+# SDBalancerDocker
 
 ### Examen 2
 **Universidad ICESI**  
@@ -72,7 +72,7 @@ git push origin master
 Es un servidor web/proxy inverso ligero de alto rendimiento y un proxy para protocolos de correo electrónico. Es software libre y de código abierto; también existe una versión comercial distribuida bajo el nombre de nginx plus. Es multiplataforma, por lo que corre en sistemas tipo Unix (GNU/Linux, BSD, Solaris, Mac OS X, etc.) y Windows.
 
 **Web**
-Para el despliegue del servidor web de apache ejecutamos los siguientes comandos, primero se realiza la instalacion y luego se inicia el servicio:
+Para el despliegue del servidor web de apache ejecutamos los siguientes comandos, primero se realiza la instalación y luego se inicia el servicio:
 
 ``
 sudo apt-get update
@@ -115,7 +115,7 @@ http {
 }
 ```
 
-Luego procedemos a corre el servicio del balanceador y ejecutamos los siguientes comandos donde abrimos el puerto definido en el archivo de configuración anterior:
+Luego procedemos a correr el servicio del balanceador y ejecutamos los siguientes comandos donde abrimos el puerto definido en el archivo de configuración anterior:
 
 ```bash
 iptables -I INPUT -p tcp --dport 8080 --syn -j ACCEPT
@@ -128,7 +128,7 @@ Luego de ejecutar el comando anterior probamos en el browser si nuestro balancea
 
 ### SOLUCIÓN PROPUESTA PARA AUTOMATIZAR
 
-Primero fue esenciar tenes descargadas las imagenes de httpd (para los servicios web) y nginx (para el balanceador). Para ello se siguieron los siguientes comandos:
+Inicialmente se descargaron las imágenes de imágenes de httpd (para los servicios web) y nginx (para el balanceador) desde el dockerhub. Para ello se siguieron los siguientes comandos:
 
 ```
 docker pull httpd
@@ -190,7 +190,7 @@ http {
 
 **PARA LA PARTE DE LA PARAMETRIZACIÓN DE LAS PAGINAS Y PODER DIFERRENCIAR Y VISUALIZAR QUE EL BALANCEO DE CARGA SE ESTA HACIENDO SE USARA CONFD. Esta es una herramienta para gestionar variables del entonor en el contenedor, buscando setear diferentes archivos.**
 
-En este contenedor web se configrara en un directorio llamado **ContainerWeb**  y en el tendremos principalmente dos partes que se presentan acontinuación:
+En este contenedor web se configurará en un directorio llamado **ContainerWeb**  y en el tendremos principalmente dos partes que se presentan a continuación:
 
 Primero encontramos el Dockerfile que contiene lo siguiente:
 
@@ -210,7 +210,7 @@ ADD files/confd /etc/confd
 CMD ["/start.sh"]
 ```
 
-Se especifica que el contenedor usara para la parte de web Apache (httpd). Es necesario bajar los recursos de de confd y realizar la configuracion para el archivo start.sh que es parte para que esto se logre.
+Se especifica que el contenedor usara para la parte de web Apache (httpd). Es necesario bajar los recursos de de confd y realizar la configuración para el archivo start.sh que es parte para que esto se logre.
 
 En el contenedor web encontramos tambien una carpeta llamada files que tiene el siguiente contenido. Primero contiene el archivo **start.sh** que se comento anteriormente, y contiene un directorio **confd** con el template y pagina web. 
 
@@ -253,7 +253,7 @@ Segundo se tiene la carpeta llamada **templates**  donde se tiene un archivo lla
 </html>
 ```
 
-Con esto ya queda terminada la configuracion del contenedor web.
+Con esto ya queda terminada la configuración del contenedor web.
 
 **DOCKER-COMPOSE.YML**
 
@@ -309,20 +309,20 @@ volumes:
    volumen_nginx:
 ```
 
-En este .yml especificamos los servicios web que correran y para cada uno se ponen: 
+En este .yml especificamos los servicios web que correrán y para cada uno se ponen: 
 
 * La imagen bajo la cual estaran. En este caso la imagen **apache_server** 
 * Se asocian las variables del entorno que se asignaran al template
 * El puerto 
 * y finalmente el volumen 
 
-Tambien se construye el proxy, que en este caso es el que se configuro con nginx en el directorio **ContainerBalancer**.
+También se construye el proxy, que en este caso es el que se configuró con nginx en el directorio **ContainerBalancer**.
 
-Es importante aclarar que se manejan los volumenes siguientes:
+Es importante aclarar que se manejan los volúmenes siguientes:
 * volumen_web
 * volumen_nginx
 
-Estos permiten compartir archivos de configuracion o de cualquier tipo entre contenedores. Se realiza como plus.
+Estos permiten compartir archivos de configuración o de cualquier tipo entre contenedores. Se realiza como plus.
 
 ### RUN DEL PROYECTO Y PRUEBAS DE FUNCIONAMIENTO
 
@@ -374,20 +374,27 @@ sudo docker-compose up
   <img src="imagenes/containers.png" width="600"/>
 </p>
 
-**Y la lista de los volumenes:**
+**Y la lista de los volúmenes:**
 <p align="center">
   <img src="imagenes/list_volumens.png" width="600"/>
 </p>
 
-**Para probar el funcionamiento de los volumenes, se tomara el volumen de los servicios web. Lo primero que se debe hacer es  ingresar a uno de los contenedores web en funcionamiento y creamos un archivo cualquiera, en este caso llamado, filePrueba.txt, como se muestra en la siguiente imagen:**
+**Para probar el funcionamiento de los volúmenes, se tomara el volumen de los servicios web. Lo primero que se debe hacer es  ingresar a uno de los contenedores web en funcionamiento y creamos un archivo cualquiera, en este caso llamado, filePrueba.txt, como se muestra en la siguiente imagen:**
 <p align="center">
   <img src="imagenes/ingresocontcreatefile.png" width="600"/>
 </p>
 
-**Luego verificamos que este se encuentre compartido con el host, para ello buscamos donde se encuentran ubicados los volumenes creados e ingresamos habilitando todos los permisos, y finalmente encontramos que el archivo filePrueba.txt si se encuentra compartido con el host. Tambien era posible ingresar a otro de los contenedores web y se podia visualizar que el .txt tambien se encontraba en el** 
+**Luego verificamos que este se encuentre compartido con el host, para ello buscamos donde se encuentran ubicados los volúmenes creados e ingresamos habilitando todos los permisos, y finalmente encontramos que el archivo filePrueba.txt si se encuentra compartido con el host. También era posible ingresar a otro de los contenedores web y se podia visualizar que el .txt tambien se encontraba en el** 
 <p align="center">
   <img src="imagenes/hostverification.png" width="600"/>
 </p>
+
+### Problemas encontrados
+
+* El principal problema encontrado fue de qué forma parametrizar y como configurar las variables de entorno, con el fin de diferenciar las páginas web. Este problema se solucionó usando “confd” como herramienta. 
+* El segundo problema fue como asociar y crear volúmenes desde del docker-compose.yml que despliega la infraestructura. Basado en documentación en la web se logró solucionar este problema. 
+* El tercer problema fue encontrar cuales eran las especificaciones que debían contener los Dockerfile. Basado en documentación en la web se logró solucionar este problema. 
+
 
 ## FIN DEL DOCUMENTO
 
