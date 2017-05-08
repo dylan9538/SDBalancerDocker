@@ -326,24 +326,24 @@ Estos permiten compartir archivos de configuracion o de cualquier tipo entre con
 
 ### RUN DEL PROYECTO Y PRUEBAS DE FUNCIONAMIENTO
 
-Para las pruebas de funcionamiento primero debemos de construir la imagen para los servicios web. Con el siguiente comando:
+**Para las pruebas de funcionamiento primero debemos de construir la imagen para los servicios web. Con el siguiente comando:**
 
 ```
 docker build -t apache_server ./ContainerWeb/
 ```
 
 <p align="center">
-  <img src="imagenes/build_image_apache.png" width="500"/>
+  <img src="imagenes/build_image_apache.png" width="600"/>
 </p>
 
-Luego procedemos a contruir el docker-compose.yml y montarlo, con los siguientes comandos:
+**Luego procedemos a contruir el docker-compose.yml y montarlo, con los siguientes comandos:**
 
 ```
 sudo docker-compose  build --no-cache
 ```
 
 <p align="center">
-  <img src="imagenes/compose_build.png" width="500"/>
+  <img src="imagenes/compose_build.png" width="600"/>
 </p>
 
 ```
@@ -351,7 +351,46 @@ sudo docker-compose up
 ```
 
 <p align="center">
-  <img src="imagenes/compose_up.png" width="500"/>
+  <img src="imagenes/compose_up.png" width="600"/>
 </p>
 
-Con ello obtenemos las siguientes pruebas de funcionamiento de nuestro balanceador de cargar con Docker y conf.
+**Con ello obtenemos las siguientes pruebas de funcionamiento de nuestro balanceador de cargar con Docker y conf.**
+
+<p align="center">
+  <img src="imagenes/pruebaUno.png" width="600"/>
+</p>
+
+<p align="center">
+  <img src="imagenes/pruebaDos.png" width="600"/>
+</p>
+
+<p align="center">
+  <img src="imagenes/pruebaTres.png" width="600"/>
+</p>
+
+**Tambien tenemos la lista de los contenedores montados:**
+
+<p align="center">
+  <img src="imagenes/containers.png" width="600"/>
+</p>
+
+**Y la lista de los volumenes:**
+<p align="center">
+  <img src="imagenes/list_volumens.png" width="600"/>
+</p>
+
+**Para probar el funcionamiento de los volumenes, se tomara el volumen de los servicios web. Lo primero que se debe hacer es  ingresar a uno de los contenedores web en funcionamiento y creamos un archivo cualquiera, en este caso llamado, filePrueba.txt, como se muestra en la siguiente imagen:**
+<p align="center">
+  <img src="imagenes/ingresocontcreatefile.png" width="600"/>
+</p>
+
+**Luego verificamos que este se encuentre compartido con el host, para ello buscamos donde se encuentran ubicados los volumenes creados e ingresamos habilitando todos los permisos, y finalmente encontramos que el archivo filePrueba.txt si se encuentra compartido con el host. Tambien era posible ingresar a otro de los contenedores web y se podia visualizar que el .txt tambien se encontraba en el** 
+<p align="center">
+  <img src="imagenes/hostverification.png" width="600"/>
+</p>
+
+##FIN DEL DOCUMENTO
+
+
+
+
