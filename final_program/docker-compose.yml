@@ -1,0 +1,51 @@
+version: '2'
+
+services:
+  server_1:
+    image: apache_server
+    environment:
+      - namePage= AppOne
+    expose:
+      - "5000"
+    volumes: 
+      - volumen_web:/volumen_web
+
+
+  server_2:
+    image: apache_server
+    environment:
+      - namePage=AppTwo
+    expose:
+      - "5000"
+    volumes: 
+      - volumen_web:/volumen_web
+
+
+
+  server_3:
+    image: apache_server
+    environment:
+      - namePage=AppThree
+    expose:
+      - "5000"
+    volumes: 
+      - volumen_web:/volumen_web
+
+
+  proxy:
+    build:
+      context:  ./ContainerBalancer
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    links:
+      - server_1
+      - server_2
+      - server_3
+
+    volumes: 
+      - volumen_nginx:/volumen_nginx
+
+volumes:
+   volumen_web:
+   volumen_nginx:
