@@ -8,8 +8,6 @@
 ### Código: A00265772
 ### Repositorio GITHUB: https://github.com/dylan9538/DockerBalancerSD
 
-
-
 ### Objetivos
 * Realizar de forma autónoma el aprovisionamiento automático de infraestructura
 * Diagnosticar y ejecutar de forma autónoma las acciones necesarias para lograr infraestructuras estables
@@ -44,10 +42,10 @@ cd parcialDosRepo
 En este repositorio añadiremos los archivos que se manejen.
 
 ```
-git clone https://github.com/dylan9538/DockerBalancerSD.git
-cd parcialDosDistribuidos
+git clone https://github.com/dylan9538/SDBalancerDocker.git
+cd SDBalancerDocker
 
-git config remote.origin.url "https://token@github.com/dylan9538/DockerBalancerSD.git"
+git config remote.origin.url "https://token@github.com/dylan9538/SDBalancerDocker.git"
 ```
 En el campo token añado el token generado en github.
 
@@ -65,7 +63,7 @@ git push origin master
 ```
 ## SOLUCION DEL PROBLEMA
 
-### Consignación de los comandos de linux necesarios para el aprovisionamiento de los servicios solicitados
+### Consignación de los comandos de linux necesarios para el aprovisionamiento de los servicios solicitados (PRE)
 
 **Usaremos Nginx que permite realizar el balanceo de carga necesario:**
 
@@ -73,54 +71,27 @@ git push origin master
 
 Es un servidor web/proxy inverso ligero de alto rendimiento y un proxy para protocolos de correo electrónico. Es software libre y de código abierto; también existe una versión comercial distribuida bajo el nombre de nginx plus. Es multiplataforma, por lo que corre en sistemas tipo Unix (GNU/Linux, BSD, Solaris, Mac OS X, etc.) y Windows.
 
-**PASOS PARA LA INSTALACIÓN DE NGINX**
+**Web**
+Para el despliegue del servidor web de apache ejecutamos los siguientes comandos, primero se realiza la instalacion y luego se inicia el servicio:
 
-Estos pasos se realizan dentro del servidor que será nuestro balanceador de carga:
+``
+sudo apt-get update
+sudo apt-get install apache2
+sudo service apache2 start
+``
 
-**Para empezar y evitar problemas de permiso ejecutamos el comando siguiente:**
+### Balancer nginx
 
-```
-sudo -i
-```
-
-**Empezamos dirigiendonos a la carpeta de los repositorios de yum, con el siguiente comando**
-
-```
-cd /etc/yum.repos.d
-```
-
-**se debe de crear un file de repositorio para alojar Nginx**
+Primero se instala nginx, ejecuntando los siguientes comandos:
 
 ```
-vi nginx.repo
+sudo apt-get update
+sudo apt-get install Nginx
 ```
 
-**Dentro del file agregamos el siguiente texto necesario para configurar la ruta de descarga de descargar el Nginx, donde queda específicado el sistema operativo, la versión y la arquitectura del computador.**
+Luego de instalar nginx se configura el archivo nginx.conf con el siguiente contenido:
 
-```
-[nginx]
-name=nginx repo
-baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
-gpgcheck=0
-enabled=1
-```
-**Luego ejecutamos el siguiente comando de instalación de nginx**
-
-```
-yum install nginx
-```
-
-**CONFIGURACIÓN DE NGINX PARA QUE CUMPLA SU FUNCIÓN DE BALANCEADOR DE CARGA**
-
-**Primero se accede al archivo de configuración**
-
-```
-vi /etc/nginx/nginx.conf
-```
-
-**El archivo viene con un contenido por defecto. Es necesario que este sea eliminado y se agregue el siguiente código con el cual se especifican los servidores a los cuales el balanceador escuahará**
-
-```
+``
 worker_processes 3;
 events { worker_connections 1024; }
 http {
@@ -142,20 +113,16 @@ http {
         }
     }
 }
-```
+``
 
-**Luego ejecutamos los siguientes comandos donde abrimos el puerto definido en el archivo de configuración anterior:**
+Luego procedemos a corre el servicio del balanceador y ejecutamos los siguientes comandos donde abrimos el puerto definido en el archivo de configuración anterior:
 
-```
+``
  iptables -I INPUT -p tcp --dport 8080 --syn -j ACCEPT
  service iptables save
  service iptables restart
-```
-**Finalmente iniciamos nginx**
-
-```
-service nginx start
-```
+ service nginx start
+``
 
 Luego de ejecutar el comando anterior probamos en el browser si nuestro balanceador de carga esta funcionando digitando la ip del balanceador y el puerto 8080. 
 
@@ -176,7 +143,7 @@ A continuación se explicara paso a paso el desarrollo de cada uno de los files 
 
 Se crea un directorio llamado Container balancer, donde encontraremos los siguientes archivos.
 
-Primero se tiene el Dockerfile con el siguiente contenido:
+Primero se tiene el Dockerfile con el siguiente contenido, el cual contiene configuración necesaria para trabajar con el nginx instalado ya:
 
 ```
 #Se usa el contenedor con nginx pre instalado
@@ -193,7 +160,7 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 CMD service nginx start
 ```
 
-Luego tenemos el archivo llamado nginx.conf con el siguiente contenido:
+Luego tenemos el archivo llamado nginx.conf con el siguiente contenido, en el cual se especifican la cantidad de servidores web que se utilizaran en el balanceo de carga y se especifica que trabajara como proxy:
 
 ```
 worker_processes 3;
@@ -218,6 +185,30 @@ http {
     }
 }
 ```
+
+**Luego se realiza la configuración del contenedor web**
+
+En este contenedor tendremos principalmente dos partes que se presentan acontinuación:
+
+Primero encontramos el Dockerfile que contiene lo siguiente:
+
+```
+FROM httpd
+MAINTAINER Dylan Torres
+
+##Se bajan los recursos confd
+ADD https://github.com/kelseyhightower/confd/releases/download/v0.10.0/confd-0.10.0-linux-amd64 /usr/local/bin/confd
+ADD files/start.sh /start.sh
+
+RUN chmod +x /usr/local/bin/confd
+RUN chmod +x /start.sh
+
+ADD files/confd /etc/confd
+
+CMD ["/start.sh"]
+```
+
+Se especifica que el contenedor usara para la parte de web Apache (httpd) 
 
 
 
