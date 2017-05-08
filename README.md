@@ -91,7 +91,7 @@ sudo apt-get install Nginx
 
 Luego de instalar nginx se configura el archivo nginx.conf con el siguiente contenido:
 
-``
+```bash
 worker_processes 3;
 events { worker_connections 1024; }
 http {
@@ -113,15 +113,15 @@ http {
         }
     }
 }
-``
+```
 
 Luego procedemos a corre el servicio del balanceador y ejecutamos los siguientes comandos donde abrimos el puerto definido en el archivo de configuración anterior:
 
 ``
- iptables -I INPUT -p tcp --dport 8080 --syn -j ACCEPT
- service iptables save
- service iptables restart
- service nginx start
+iptables -I INPUT -p tcp --dport 8080 --syn -j ACCEPT
+service iptables save
+service iptables restart
+service nginx start
 ``
 
 Luego de ejecutar el comando anterior probamos en el browser si nuestro balanceador de carga esta funcionando digitando la ip del balanceador y el puerto 8080. 
