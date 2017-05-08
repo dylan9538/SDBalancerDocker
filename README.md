@@ -6,7 +6,7 @@
 
 ### Nombre: Dylan Dabian Torres
 ### Código: A00265772
-### Repositorio GITHUB: https://github.com/dylan9538/DockerBalancerSD
+### Repositorio GITHUB: https://github.com/dylan9538/SDBalancerDocker
 
 ### Objetivos
 * Realizar de forma autónoma el aprovisionamiento automático de infraestructura
@@ -316,7 +316,7 @@ En este .yml especificamos los servicios web que correran y para cada uno se pon
 * El puerto 
 * y finalmente el volumen 
 
-Tambien se constrye el proxy, que en este caso es el que se configuro con nginx en el directorio **ContainerBalancer**.
+Tambien se construye el proxy, que en este caso es el que se configuro con nginx en el directorio **ContainerBalancer**.
 
 Es importante aclarar que se manejan los volumenes siguientes:
 * volumen_web
@@ -389,7 +389,7 @@ sudo docker-compose up
   <img src="imagenes/hostverification.png" width="600"/>
 </p>
 
-##FIN DEL DOCUMENTO
+## FIN DEL DOCUMENTO
 
 
 
