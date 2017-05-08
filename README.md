@@ -117,12 +117,12 @@ http {
 
 Luego procedemos a corre el servicio del balanceador y ejecutamos los siguientes comandos donde abrimos el puerto definido en el archivo de configuración anterior:
 
-``
+```bash
 iptables -I INPUT -p tcp --dport 8080 --syn -j ACCEPT
 service iptables save
 service iptables restart
 service nginx start
-``
+```
 
 Luego de ejecutar el comando anterior probamos en el browser si nuestro balanceador de carga esta funcionando digitando la ip del balanceador y el puerto 8080. 
 
@@ -139,9 +139,9 @@ docker pull nginx
 
 A continuación se explicara paso a paso el desarrollo de cada uno de los files necesarios para la creación y caracterización de los contenedores web y el contenedor del balanceador (nginx). 
 
-**Primero se empieza por el contenedor del balanceador de carga**
+**CONTAINER BALANCER NGINX**
 
-Se crea un directorio llamado Container balancer, donde encontraremos los siguientes archivos.
+Se crea un directorio llamado **ContainerBalancer**, donde encontraremos los siguientes archivos.
 
 Primero se tiene el Dockerfile con el siguiente contenido, el cual contiene configuración necesaria para trabajar con el nginx instalado ya:
 
@@ -186,9 +186,11 @@ http {
 }
 ```
 
-**Luego se realiza la configuración del contenedor web**
+**CONTAINER WEB**
 
-En este contenedor tendremos principalmente dos partes que se presentan acontinuación:
+**PARA LA PARTE DE LA PARAMETRIZACIÓN DE LAS PAGINAS Y PODER DIFERRENCIAR Y VISUALIZAR QUE EL BALANCEO DE CARGA SE ESTA HACIENDO SE USARA CONFD. Esta es una herramienta para gestionar variables del entonor en el contenedor, buscando setear diferentes archivos.**
+
+En este contenedor web se configrara en un directorio llamado **ContainerWeb**  y en el tendremos principalmente dos partes que se presentan acontinuación:
 
 Primero encontramos el Dockerfile que contiene lo siguiente:
 
@@ -208,7 +210,148 @@ ADD files/confd /etc/confd
 CMD ["/start.sh"]
 ```
 
-Se especifica que el contenedor usara para la parte de web Apache (httpd) 
+Se especifica que el contenedor usara para la parte de web Apache (httpd). Es necesario bajar los recursos de de confd y realizar la configuracion para el archivo start.sh que es parte para que esto se logre.
 
+En el contenedor web encontramos tambien una carpeta llamada files que tiene el siguiente contenido. Primero contiene el archivo **start.sh** que se comento anteriormente, y contiene un directorio **confd** con el template y pagina web. 
 
+El archivo **start.sh** tiene el siguiente contenido. En el se asignan valores por defecto a las variables del entorno si se da el caso de que no se setan al montar el contenedor web. Con el flag de -backend env se le informa  a confd que las variables que estan en los templates seran adquiridas  de las variables del entorno del contenedor web y al final se ejecuta el servidor web httpd. Este es el ejecutable que se usa como entrypoint del contenedor y llama los comandos que se encargan de asociar las variables del entorno a los templates.
 
+```
+#!/bin/bash
+set -e  
+
+# if $proxy_domain is not set, then default to $HOSTNAME
+export namePage=${namePage:-"No parameter asigned"}
+
+# ensure the following environment variables are set. exit script and container if not set.
+test $namePage
+
+/usr/local/bin/confd -onetime -backend env
+
+echo "Starting web server apache"
+exec httpd -DFOREGROUND
+```
+
+Dentro del directorio **confd** tenemos dos carpetas. 
+Primero se tiene la carpeta **conf.d** donde tenemos un archivo llamado **index.html.toml**. Este archivo es el gestor del template, y en el se especifica cual es el template que se renderizará y donde se enviara luego de ser renderizado. Tiene el siguiente contenido:
+
+```
+[template]
+src = "index.html.tmpl"
+dest = "/usr/local/apache2/htdocs/index.html"
+```
+
+Segundo se tiene la carpeta llamada **templates**  donde se tiene un archivo llamado **index.html.tmpl**, el cual es nuestro template. En el estamos creando nuestra variable del entorno. Este sera nuestra vista del servidor web:
+
+```
+<html>
+<body>
+<h1>Paginas parcial 2 Distribuidos</h1>
+<p>Cambiando a la page</p>
+{{ getenv "namePage" }}
+</body>
+</html>
+```
+
+Con esto ya queda terminada la configuracion del contenedor web.
+
+**DOCKER-COMPOSE.YML**
+
+Finalmente se procede a crear el archivo **docker-compose.yml**.
+
+```
+version: '2'
+
+services:
+  server_1:
+    image: apache_server
+    environment:
+      - namePage= AppOne
+    expose:
+      - "5000"
+    volumes: 
+      - volumen_web:/volumen_web
+
+  server_2:
+    image: apache_server
+    environment:
+      - namePage=AppTwo
+    expose:
+      - "5000"
+    volumes: 
+      - volumen_web:/volumen_web
+
+  server_3:
+    image: apache_server
+    environment:
+      - namePage=AppThree
+    expose:
+      - "5000"
+    volumes: 
+      - volumen_web:/volumen_web
+
+  proxy:
+    build:
+      context:  ./ContainerBalancer
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    links:
+      - server_1
+      - server_2
+      - server_3
+
+    volumes: 
+      - volumen_nginx:/volumen_nginx
+
+volumes:
+   volumen_web:
+   volumen_nginx:
+```
+
+En este .yml especificamos los servicios web que correran y para cada uno se ponen: 
+
+* La imagen bajo la cual estaran. En este caso la imagen **apache_server** 
+* Se asocian las variables del entorno que se asignaran al template
+* El puerto 
+* y finalmente el volumen 
+
+Tambien se constrye el proxy, que en este caso es el que se configuro con nginx en el directorio **ContainerBalancer**.
+
+Es importante aclarar que se manejan los volumenes siguientes:
+* volumen_web
+* volumen_nginx
+
+Estos permiten compartir archivos de configuracion o de cualquier tipo entre contenedores. Se realiza como plus.
+
+### RUN DEL PROYECTO Y PRUEBAS DE FUNCIONAMIENTO
+
+Para las pruebas de funcionamiento primero debemos de construir la imagen para los servicios web. Con el siguiente comando:
+
+```
+docker build -t apache_server ./ContainerWeb/
+```
+
+<p align="center">
+  <img src="imagenes/build_image_apache.png" width="500"/>
+</p>
+
+Luego procedemos a contruir el docker-compose.yml y montarlo, con los siguientes comandos:
+
+```
+sudo docker-compose  build --no-cache
+```
+
+<p align="center">
+  <img src="imagenes/compose_build.png" width="500"/>
+</p>
+
+```
+sudo docker-compose up
+```
+
+<p align="center">
+  <img src="imagenes/compose_up.png" width="500"/>
+</p>
+
+Con ello obtenemos las siguientes pruebas de funcionamiento de nuestro balanceador de cargar con Docker y conf.
